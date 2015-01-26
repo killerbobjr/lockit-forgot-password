@@ -124,7 +124,25 @@ ForgotPassword.prototype.postForgot = function(req, res, next) {
   // look for user in db
   adapter.find('email', email, function(err, user) {
     if (err) return next(err);
+	if (user) {
+		if(user.accountInvalid) {
+		  error = 'That account email is invalid';
+		  // send only JSON when REST is active
+		  if (config.rest) return res.json(403, {error: error});
+		  
+		  var errorView = config.forgotPassword.views.forgotPassword || join('get-forgot-password');
 
+		  // render template with error message
+		  res.status(403);
+		  res.render(errorView, {
+			title: 'Forgot password',
+			error: error,
+			basedir: req.app.get('views'),
+			email: email
+		  });
+		  return;
+		}
+	}
     // custom or built-in view
     var view = config.forgotPassword.views.sentEmail || join('post-forgot-password');
 
