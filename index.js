@@ -17,36 +17,6 @@ function join(view) {
   return path.join(__dirname, 'views', view);
 }
 
-function base64_to_base10(str)
-{
-	var order = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
-	var base = order.length;
-	var num = 0, r;
-	while (str.length)
-	{
-		r = order.indexOf(str.charAt(0));
-		str = str.substr(1);
-		num *= base;
-		num += r;
-	}
-	return num;
-}
-	
-function base10_to_base64(num)
-{
-	var order = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
-	var base = order.length;
-	var str = "", r;
-	while (num)
-	{
-		r = num % base;
-		num -= r;
-		num /= base;
-		str = order.charAt(r) + str;
-	}
-	return str;
-}
-
 /**
  * ForgotPassword constructor function.
  *
@@ -189,7 +159,7 @@ ForgotPassword.prototype.postForgot = function(req, res, next) {
     // user found in db
     // do not delete old password as it might be someone else
     // send link with setting new password page
-    var token = base64_to_base10(uuid.generate()).toString();
+    var token = uuid.generate();
     user.pwdResetToken = token;
 
     // set expiration date for password reset token
@@ -239,7 +209,7 @@ ForgotPassword.prototype.getToken = function(req, res, next) {
   var token = req.params.token;
 
   // if format is wrong no need to query the database
-  if (!uuid.isValid(base10_to_base64(token))) return next();
+  if (!uuid.isValid(token)) return next();
 
   // check if we have a user with that token
   adapter.find('pwdResetToken', token, function(err, user) {
@@ -311,7 +281,7 @@ ForgotPassword.prototype.postToken = function(req, res, next) {
   var error = '';
 
   // if format is wrong no need to query the database
-  if (!uuid.isValid(base10_to_base64(token))) return next();
+  if (!uuid.isValid(token)) return next();
 
   // check for valid input
   if (!password) {
