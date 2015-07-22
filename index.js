@@ -140,6 +140,23 @@ ForgotPassword.prototype.postForgot = function(req, res, next) {
 		  });
 		  return;
 		}
+		else if(!user.emailVerified) {
+		  error = 'This email has not been verified';
+		  // send only JSON when REST is active
+		  if (config.rest) return res.json(403, {error: error});
+		  
+		  var errorView = config.signup.views.resend || join('resend-verification');
+
+		  // render template with error message
+		  res.status(403);
+		  res.render(errorView, {
+			title: 'Resend verification email',
+			error: error,
+			basedir: req.app.get('views'),
+			email: email
+		  });
+		  return;
+		}
 	}
     // custom or built-in view
     var view = config.forgotPassword.views.sentEmail || join('post-forgot-password');
