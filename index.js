@@ -187,23 +187,48 @@ ForgotPassword.prototype.postForgot = function(req, res, next) {
     adapter.update(user, function(err, user) {
       if (err) return next(err);
 
-      // send email with forgot password link
-      var mail = new Mail(config);
-      mail.forgot(user.name, user.email, token, function(err, response) {
-        if (err) return next(err);
+		// send email with forgot password link
+		var mail = new Mail(config);
+		mail.forgot(user.name, user.email, token, function(err, response)
+			{
+				if (err)
+				{
+					// emit event
+					that.emit('forgot::err', user, res);
 
-        // emit event
-        that.emit('forgot::sent', user, res);
+					// send only JSON when REST is active
+					if (config.rest)
+					{
+						return next(err);
+					}
 
-        // send only JSON when REST is active
-        if (config.rest) return res.send(204);
+					res.render(
+						view,
+						{
+							error: 'Error connecting to the mail server. Please notify the administrator.',
+							title: 'Forgot password',
+							basedir: req.app.get('views')
+						});
+				}
+				else
+				{
+					// emit event
+					that.emit('forgot::sent', user, res);
 
-        res.render(view, {
-          title: 'Forgot password',
-          basedir: req.app.get('views')
-        });
-      });
+					// send only JSON when REST is active
+					if (config.rest)
+					{
+						return res.send(204);
+					}
 
+					res.render(
+						view,
+						{
+							title: 'Forgot password',
+							basedir: req.app.get('views')
+						});
+				}
+			});
     });
 
   });
