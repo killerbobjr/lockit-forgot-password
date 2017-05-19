@@ -65,6 +65,16 @@ util.inherits(ForgotPassword, events.EventEmitter);
  */
 ForgotPassword.prototype.getForgot = function(req, res, next) {
   var config = this.config;
+  var email;
+  
+  if(res.locals.user && res.locals.user.email)
+  {
+	  email = res.locals.user.email;
+  }
+  else if(req.cookies && req.cookies.login)
+  {
+	  email = req.cookies.login;
+  }
 
   // do not handle the route when REST is active
   if (config.rest) return next();
@@ -74,7 +84,8 @@ ForgotPassword.prototype.getForgot = function(req, res, next) {
 
   res.render(view, {
     title: 'Forgot password',
-    basedir: req.app.get('views')
+    basedir: req.app.get('views'),
+	email: email
   });
 };
 
