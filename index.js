@@ -135,7 +135,7 @@ ForgotPassword.prototype.postForgot = function(req, res, next) {
     if (err) return next(err);
 	if (user) {
 		if(user.accountInvalid) {
-		  error = 'That account email is invalid';
+		  error = 'That account is invalid';
 		  // send only JSON when REST is active
 		  if (config.rest) return res.json(403, {error: error});
 		  
@@ -174,14 +174,21 @@ ForgotPassword.prototype.postForgot = function(req, res, next) {
 
     // no user found -> pretend we sent an email
     if (!user) {
-      // send only JSON when REST is active
-      if (config.rest) return res.send(204);
+	  error = 'That account does not exist';
+	  // send only JSON when REST is active
+	  if (config.rest) return res.json(403, {error: error});
+	  
+	  var errorView = config.forgotPassword.views.forgotPassword || join('get-forgot-password');
 
-      res.render(view, {
-        title: 'Forgot password',
-        basedir: req.app.get('views')
-      });
-      return;
+	  // render template with error message
+	  res.status(403);
+	  res.render(errorView, {
+		title: 'Forgot password',
+		error: error,
+		basedir: req.app.get('views'),
+		email: email
+	  });
+	  return;
     }
 
     // user found in db
