@@ -130,6 +130,14 @@ ForgotPassword.prototype.postForgot = function(req, res, next) {
 
   // looks like given email address has the correct format
 
+	// Custom for our app
+	var	basequery = {};
+	if(res.locals && res.locals.basequery)
+	{
+		basequery = res.locals.basequery;
+	}
+
+
   // look for user in db
   adapter.find('email', email, function(err, user) {
     if (err) return next(err);
@@ -249,7 +257,7 @@ ForgotPassword.prototype.postForgot = function(req, res, next) {
 			});
     });
 
-  });
+  }, basequery);
 };
 
 
@@ -270,6 +278,13 @@ ForgotPassword.prototype.getToken = function(req, res, next) {
 
   // if format is wrong no need to query the database
   if (!uuid.isValid(token)) return next();
+
+	// Custom for our app
+	var	basequery = {};
+	if(res.locals && res.locals.basequery)
+	{
+		basequery = res.locals.basequery;
+	}
 
   // check if we have a user with that token
   adapter.find('pwdResetToken', token, function(err, user) {
@@ -318,7 +333,7 @@ ForgotPassword.prototype.getToken = function(req, res, next) {
       basedir: req.app.get('views')
     });
 
-  });
+  }, basequery);
 };
 
 
@@ -362,6 +377,14 @@ ForgotPassword.prototype.postToken = function(req, res, next) {
     });
     return;
   }
+
+	// Custom for our app
+	var	basequery = {};
+	if(res.locals && res.locals.basequery)
+	{
+		basequery = res.locals.basequery;
+	}
+
 
   // check for token in db
   adapter.find('pwdResetToken', token, function(err, user) {
@@ -434,5 +457,5 @@ ForgotPassword.prototype.postToken = function(req, res, next) {
       });
 
     });
-  });
+  }, basequery);
 };
