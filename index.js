@@ -21,8 +21,7 @@ var ForgotPassword = module.exports = function(cfg, adapter)
 		return new ForgotPassword(cfg, adapter);
 	}
 
-	this.config = cfg.forgotPassword;
-	this.config.mail = cfg;
+	this.config = cfg;
 	this.adapter = adapter;
 
 	var	config = this.config;
@@ -31,12 +30,12 @@ var ForgotPassword = module.exports = function(cfg, adapter)
 	events.EventEmitter.call(this);
 
 	// set default route
-	var route = config.route || '/forgotpassword';
+	var route = config.forgotPassword.route || '/forgotpassword';
 
 	// add prefix when rest is active
 	if(config.rest) 
 	{
-		route = '/' + config.rest + route;
+		route = '/' + config.rest.route + route;
 	}
 
 	uuid.characters();
@@ -69,9 +68,9 @@ ForgotPassword.prototype.sendResponse = function(err, view, user, json, req, res
 {
 	var	config = this.config;
 
-	this.emit((config.eventmsg || config.route), err, view, user, res);
+	this.emit((config.forgotPassword.eventMessage || 'ForgotPassword'), err, view, user, res);
 	
-	if(config.handleResponse)
+	if(config.forgotPassword.handleResponse)
 	{
 		// do not handle the route when REST is active
 		if(config.rest)
@@ -89,7 +88,7 @@ ForgotPassword.prototype.sendResponse = function(err, view, user, json, req, res
 		{
 			// custom or built-in view
 			var	resp = {
-					title: config.title || 'Forgot Password',
+					title: config.forgotPassword.title || 'Forgot Password',
 					basedir: req.app.get('views')
 				};
 				
@@ -127,7 +126,7 @@ ForgotPassword.prototype.sendResponse = function(err, view, user, json, req, res
 ForgotPassword.prototype.getForgot = function(req, res, next)
 {
 	var config = this.config;
-	this.sendResponse(undefined, config.views.forgotPassword, undefined, {result:true}, req, res, next);
+	this.sendResponse(undefined, config.forgotPassword.views.forgotPassword, undefined, {result:true}, req, res, next);
 };
 
 
@@ -159,7 +158,7 @@ ForgotPassword.prototype.postForgot = function(req, res, next)
 	// check for valid input
 	if(!email || !checkEmail(email))
 	{
-		that.sendResponse({message:'The email is invalid'}, config.views.forgotPassword, undefined, {result:true}, req, res, next);
+		that.sendResponse({message:'The email is invalid'}, config.forgotPassword.views.forgotPassword, undefined, {result:true}, req, res, next);
 	}
 	else
 	{
@@ -181,17 +180,17 @@ ForgotPassword.prototype.postForgot = function(req, res, next)
 			}
 			else if(!user)
 			{
-				that.sendResponse({message:'That account does not exist'}, config.views.forgotPassword, user, {result:true}, req, res, next);
+				that.sendResponse({message:'That account does not exist'}, config.forgotPassword.views.forgotPassword, user, {result:true}, req, res, next);
 			}
 			else
 			{
 				if(user.accountInvalid)
 				{
-					that.sendResponse({message:'That account is invalid'}, config.views.forgotPassword, user, {result:true}, req, res, next);
+					that.sendResponse({message:'That account is invalid'}, config.forgotPassword.views.forgotPassword, user, {result:true}, req, res, next);
 				}
 				else if(!user.emailVerified)
 				{
-					that.sendResponse({message:'This email has not been verified'}, config.views.forgotPassword, user, {result:true}, req, res, next);
+					that.sendResponse({message:'This email has not been verified'}, config.forgotPassword.views.forgotPassword, user, {result:true}, req, res, next);
 				}
 				else
 				{
@@ -204,7 +203,7 @@ ForgotPassword.prototype.postForgot = function(req, res, next)
 					user.pwdResetToken = token;
 
 					// set expiration date for password reset token
-					var timespan = ms(config.tokenExpiration);
+					var timespan = ms(config.forgotPassword.tokenExpiration);
 					user.pwdResetTokenExpires = moment().add(timespan, 'ms').toDate();
 
 					// update user in db
@@ -217,16 +216,16 @@ ForgotPassword.prototype.postForgot = function(req, res, next)
 							else
 							{
 								// send email with forgot password link
-								var mail = new Mail(config.mail);
+								var mail = new Mail(config);
 								mail.forgot(user.name, user.email, token, function(err, response)
 									{
 										if(err)
 										{
-											that.sendResponse({message:'Error connecting to the mail server.<br>Please notify the administrator.'}, config.views.forgotPassword, user, {result:true}, req, res, next);
+											that.sendResponse(err, config.forgotPassword.views.forgotPassword, user, {result:true}, req, res, next);
 										}
 										else
 										{
-											that.sendResponse(undefined, config.views.sentEmail, user, {result:true}, req, res, next);
+											that.sendResponse(undefined, config.forgotPassword.views.sentEmail, user, {result:true}, req, res, next);
 										}
 									});
 							}
@@ -297,13 +296,13 @@ ForgotPassword.prototype.getToken = function(req, res, next)
 								}
 								else
 								{
-									that.sendResponse({message:'The link has expired'}, config.views.linkExpired, user, {result:true}, req, res, next);
+									that.sendResponse({message:'The link has expired'}, config.forgotPassword.views.linkExpired, user, {result:true}, req, res, next);
 								}
 							});
 					}
 					else
 					{
-						that.sendResponse(undefined, config.views.newPassword, user, {token:token,result:true}, req, res, next);
+						that.sendResponse(undefined, config.forgotPassword.views.newPassword, user, {token:token,result:true}, req, res, next);
 					}
 				}
 			}, basequery);
@@ -336,7 +335,7 @@ ForgotPassword.prototype.postToken = function(req, res, next)
 	else if(!password)
 	{
 		// check for valid input
-		that.sendResponse({message:'Please enter a password'}, config.views.newPassword, undefined, {token:token,result:true}, req, res, next);
+		that.sendResponse({message:'Please enter a password'}, config.forgotPassword.views.newPassword, undefined, {token:token,result:true}, req, res, next);
 	}
 	else
 	{
@@ -379,7 +378,7 @@ ForgotPassword.prototype.postToken = function(req, res, next)
 									}
 									else
 									{
-										that.sendResponse({message:'The link has expired'}, config.views.linkExpired, user, {result:true}, req, res, next);
+										that.sendResponse({message:'The link has expired'}, config.forgotPassword.views.linkExpired, user, {result:true}, req, res, next);
 									}
 								});
 						}
@@ -416,7 +415,7 @@ ForgotPassword.prototype.postToken = function(req, res, next)
 											}
 											else
 											{
-												that.sendResponse(undefined, config.views.changedPassword, user, {result:true}, req, res, next);
+												that.sendResponse(undefined, config.forgotPassword.views.changedPassword, user, {result:true}, req, res, next);
 											}
 										});
 
